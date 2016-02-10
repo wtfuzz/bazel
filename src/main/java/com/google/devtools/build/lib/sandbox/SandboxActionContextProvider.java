@@ -38,7 +38,7 @@ public class SandboxActionContextProvider extends ActionContextProvider {
     boolean sandboxDebug = buildRequest.getOptions(SandboxOptions.class).sandboxDebug;
     Builder<ActionContext> strategies = ImmutableList.builder();
 
-    if (OS.getCurrent() == OS.LINUX) {
+    if (OS.getCurrent() == OS.DARWIN) {
       strategies.add(
           new LinuxSandboxedStrategy(
               env.getClientEnv(),

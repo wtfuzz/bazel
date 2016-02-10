@@ -51,7 +51,7 @@ public class NamespaceSandboxRunner {
   private final Path sandboxPath;
   private final Path sandboxExecRoot;
   private final Path argumentsFilePath;
-  private final ImmutableMap<Path, Path> mounts;
+  private final ImmutableSet<String> execPaths;
   private final ImmutableSet<Path> createDirs;
   private final boolean verboseFailures;
   private final boolean sandboxDebug;
@@ -59,7 +59,7 @@ public class NamespaceSandboxRunner {
   public NamespaceSandboxRunner(
       Path execRoot,
       Path sandboxPath,
-      ImmutableMap<Path, Path> mounts,
+      ImmutableSet<String> execPaths,
       ImmutableSet<Path> createDirs,
       boolean verboseFailures,
       boolean sandboxDebug) {
@@ -68,7 +68,7 @@ public class NamespaceSandboxRunner {
     this.sandboxExecRoot = sandboxPath.getRelative(execRoot.asFragment().relativeTo("/"));
     this.argumentsFilePath =
         sandboxPath.getParentDirectory().getRelative(sandboxPath.getBaseName() + ".params");
-    this.mounts = mounts;
+    this.execPaths = execPaths;
     this.createDirs = createDirs;
     this.verboseFailures = verboseFailures;
     this.sandboxDebug = sandboxDebug;
@@ -131,7 +131,8 @@ public class NamespaceSandboxRunner {
     List<String> fileArgs = new ArrayList<>();
     List<String> commandLineArgs = new ArrayList<>();
 
-    commandLineArgs.add(execRoot.getRelative("_bin/namespace-sandbox").getPathString());
+    // TODO(ulfjack): Use binTools.getExecPath() here!
+    commandLineArgs.add(execRoot.getRelative("_bin").getRelative(NAMESPACE_SANDBOX).getPathString());
 
     if (sandboxDebug) {
       fileArgs.add("-D");
@@ -157,27 +158,26 @@ public class NamespaceSandboxRunner {
       fileArgs.add(createDir.getPathString());
     }
 
+    for (PathFragment createDir : outputs) {
+      fileArgs.add("-d");
+      fileArgs.add(createDir.getParentDirectory().getPathString());
+    }
+
     if (blockNetwork) {
       // Block network access out of the namespace.
       fileArgs.add("-n");
     }
 
     // Mount all the inputs.
-    for (ImmutableMap.Entry<Path, Path> mount : mounts.entrySet()) {
+    for (String mount : execPaths) {
       fileArgs.add("-M");
-      fileArgs.add(mount.getValue().getPathString());
-
-      // The file is mounted in a custom location inside the sandbox.
-      if (!mount.getValue().equals(mount.getKey())) {
-        fileArgs.add("-m");
-        fileArgs.add(mount.getKey().getPathString());
-      }
+      fileArgs.add(mount);
     }
 
     FileSystemUtils.writeLinesAs(argumentsFilePath, StandardCharsets.ISO_8859_1, fileArgs);
     commandLineArgs.add("@" + argumentsFilePath.getPathString());
 
-    commandLineArgs.add("--");
+//    commandLineArgs.add("--");
     commandLineArgs.addAll(spawnArguments);
 
     Command cmd = new Command(commandLineArgs.toArray(new String[0]), env, cwd);
@@ -209,15 +209,15 @@ public class NamespaceSandboxRunner {
     FileSystemUtils.createDirectoryAndParents(sandboxPath);
 
     // Prepare the output directories in the sandbox.
-    for (PathFragment output : outputs) {
-      FileSystemUtils.createDirectoryAndParents(
-          sandboxExecRoot.getRelative(output.getParentDirectory()));
-    }
+//    for (PathFragment output : outputs) {
+//      FileSystemUtils.createDirectoryAndParents(
+//          sandboxExecRoot.getRelative(output.getParentDirectory()));
+//    }
   }
 
   private void copyOutputs(Collection<PathFragment> outputs) throws IOException {
     for (PathFragment output : outputs) {
-      Path source = sandboxExecRoot.getRelative(output);
+      Path source = sandboxPath.getRelative(output);
       Path target = execRoot.getRelative(output);
       FileSystemUtils.createDirectoryAndParents(target.getParentDirectory());
       if (source.isFile() || source.isSymbolicLink()) {
@@ -227,11 +227,11 @@ public class NamespaceSandboxRunner {
   }
 
   public void cleanup() throws IOException {
-    if (sandboxPath.exists()) {
-      FileSystemUtils.deleteTree(sandboxPath);
-    }
-    if (argumentsFilePath.exists()) {
-      argumentsFilePath.delete();
-    }
+//    if (sandboxPath.exists()) {
+//      FileSystemUtils.deleteTree(sandboxPath);
+//    }
+//    if (argumentsFilePath.exists()) {
+//      argumentsFilePath.delete();
+//    }
   }
 }
