@@ -23,7 +23,7 @@ filegroup(
         "//third_party:darwin": ["protoc-gen-grpc-java-0.13.2-osx-x86_64.exe"],
         "//third_party:k8": ["protoc-gen-grpc-java-0.13.2-linux-x86_64.exe"],
         "//third_party:piii": ["protoc-gen-grpc-java-0.13.2-linux-x86_32.exe"],
-        "//third_party:arm": ["protoc-gen-grpc-java-0.13.2-linux-x86_32.exe"],
+        "//third_party:arm": ["protoc-gen-grpc-java-0.13.2-linux-arm32.exe"],
         "//third_party:freebsd": ["protoc-gen-grpc-java-0.13.2-linux-x86_32.exe"],
     }),
 )
